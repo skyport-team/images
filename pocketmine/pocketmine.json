@@ -1,0 +1,36 @@
+{
+    "Image": "quay.io/skyport/pocketmine",
+    "Cmd": "",
+    "Env": [
+      "START=php -d memory_limit=512M -Dterminal.jline=false -Dterminal.ansi=true server.phar"
+    ],
+    "StopCommand": "stop",
+    "features": ["eula"],
+    "Scripts": {
+      "Install": [
+        {
+          "Uri": "https://get.pmmp.io/",
+          "Path": "server.phar"
+        },
+        {
+          "Uri": "https://raw.githubusercontent.com/skyportlabs/images_v2/main/pocketmine/server.properties",
+          "Path": "server.properties"
+        }
+      ]
+    },
+    "Variables": {
+      "Version": {
+        "type": "text",
+        "default": "4.0.0",
+        "required": true
+      }
+    },
+    "Name": "Minecraft Bedrock: PocketMine",
+    "Description": "PocketMine-MP is a server software for Minecraft: Bedrock Edition, allowing users to create and manage their own Minecraft servers.",
+    "Author": "info@skyport.dev",
+    "AuthorName": "Skyport Labs",
+    "Meta": {
+      "Version": "Skyport Images v2"
+    }
+  }
+  
