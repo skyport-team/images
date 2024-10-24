@@ -9,19 +9,15 @@
     "Scripts": {
       "Install": [
         {
-          "Uri": "https://get.pmmp.io/",
+          "Uri": "https://github.com/pmmp/PocketMine-MP/releases/download/{{Version}}/PocketMine-MP.phar",
           "Path": "server.phar"
-        },
-        {
-          "Uri": "https://raw.githubusercontent.com/skyportlabs/images_v2/main/pocketmine/server.properties",
-          "Path": "server.properties"
         }
       ]
     },
     "Variables": {
       "Version": {
         "type": "text",
-        "default": "4.0.0",
+        "default": "5.19.0",
         "required": true
       }
     },
