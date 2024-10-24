@@ -1,5 +1,5 @@
 {
-    "Image": "quay.io/skyport/pocketmine",
+    "Image": "docker.io/achul123/debian:latest",
     "Cmd": "",
     "Env": [
       "START=php -d memory_limit=512M -Dterminal.jline=false -Dterminal.ansi=true server.phar"
