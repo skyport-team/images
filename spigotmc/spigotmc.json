@@ -14,7 +14,7 @@
   "Scripts": {
     "Install": [
       {
-        "Uri": "https://download.getbukkit.org/spigot/spigot-{{Version}}.jar",
+        "Uri": "https://cdn.getbukkit.org/spigot/spigot-{{Version}}.jar",
         "Path": "server.jar"
       },
       {
