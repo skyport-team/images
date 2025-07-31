@@ -1,1 +1,18 @@
-{"Image":"quay.io/skyport/nodejs:lts","Cmd":"","Env":["START=npm install && npm start"],"Scripts":{"Install":[{"Uri":"https://raw.githubusercontent.com/skyportlabs/images_v2/main/nodejs/package.json","Path":"package.json"}]},"Name":"Generic: Node.js","Description":"Node.js is a runtime environment that enables JavaScript code to run outside of web browsers, known for its efficiency in building scalable network applications and backend APIs. It utilizes an event-driven, non-blocking I/O model and boasts a vast ecosystem of packages (npm), making it ideal for modern web development across platforms.","Author":"info@skyport.dev","AuthorName":"Skyport Labs","Meta":{"Version":"Skyport Images v2"}}
+{
+  "Image": "quay.io/skyport/nodejs:lts",
+  "Cmd": "",
+  "Env": ["START=npm install && npm start"],
+  "Scripts": {
+    "Install": [
+      {
+        "Uri": "https://raw.githubusercontent.com/skyportlabs/images_v2/main/nodejs/package.json",
+        "Path": "package.json"
+      }
+    ]
+  },
+  "Name": "Generic: Node.js",
+  "Description": "Node.js is a runtime environment that enables JavaScript code to run outside of web browsers, known for its efficiency in building scalable network applications and backend APIs. It utilizes an event-driven, non-blocking I/O model and boasts a vast ecosystem of packages (npm), making it ideal for modern web development across platforms.",
+  "Author": "info@skyport.dev",
+  "AuthorName": "Skyport Labs",
+  "Meta": { "Version": "Skyport Images v2" }
+}
