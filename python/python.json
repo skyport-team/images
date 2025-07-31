@@ -5,7 +5,7 @@
   "Scripts": {
     "Install": [
       {
-        "Uri": "https://raw.githubusercontent.com/skyportlabs/images_v2/main/python/requirements.txt",
+        "Uri": "https://raw.githubusercontent.com/skyport-team/images/main/python/requirements.txt",
         "Path": "requirements.txt"
       }
     ]
@@ -13,6 +13,6 @@
   "Name": "Generic: Python",
   "Description": "Python is a versatile programming language known for its simplicity and readability. It excels in various applications such as web development, data analysis, artificial intelligence, and scientific computing. Python's extensive standard library and third-party packages make it easy to develop powerful and scalable applications quickly. With its clean syntax and strong community support, Python is a popular choice among developers for building everything from web apps to machine learning models.",
   "Author": "info@skyport.dev",
-  "AuthorName": "Skyport Labs",
-  "Meta": { "Version": "Skyport Images v2" }
+  "AuthorName": "Skyport Team",
+  "Meta": { "Version": "Skyport Images (v2)" }
 }
