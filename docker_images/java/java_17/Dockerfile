@@ -1,12 +1,6 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM azul/zulu-openjdk:17
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
-        sqlite-libs>=3.48.0-r3 \
-        curl \
-        wget \
-        && rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get install -y curl wget && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/data
 
