@@ -28,12 +28,12 @@
   "Variables": {
     "Version": {
       "type": "text",
-      "default": "1.21.1",
+      "default": "1.21.8",
       "required": true
     },
     "Build": {
       "type": "text",
-      "default": "89",
+      "default": "22",
       "required": true
     }
   },
