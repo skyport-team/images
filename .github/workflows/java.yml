@@ -1,0 +1,202 @@
+name: Build & Push Java Images
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "docker_images/java/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docker_images/java/**"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/java
+
+jobs:
+  detect-changes:
+    name: Detect Changed Versions
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.changes.outputs.versions }}
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed Java versions
+        id: changes
+        run: |
+          set -euo pipefail
+
+          echo "::group::Analyzing changes"
+
+          # Determine comparison range based on event type
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.sha }}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual trigger - scanning all Java versions"
+            versions=$(find docker_images/java -maxdepth 1 -type d -name "java_*" | cut -d/ -f3 | sort -u)
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+            # Handle initial commit
+            if [[ "${BASE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+              echo "Initial commit detected - scanning all Java versions"
+              versions=$(find docker_images/java -maxdepth 1 -type d -name "java_*" | cut -d/ -f3 | sort -u)
+            fi
+          fi
+
+          # Get changed files if not manual trigger or initial commit
+          if [[ "${{ github.event_name }}" != "workflow_dispatch" && "${BASE_SHA:-}" != "0000000000000000000000000000000000000000" ]]; then
+            changed_files=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | grep '^docker_images/java/' | cut -d/ -f3 | sort -u || true)
+            versions="${changed_files}"
+          fi
+
+          echo "Changed files:"
+          git diff --name-only "${BASE_SHA:-HEAD^}" "${HEAD_SHA:-HEAD}" | grep '^docker_images/java/' || echo "No Java files changed"
+
+          # Process versions
+          if [[ -z "${versions}" ]]; then
+            echo "::warning::No changes detected in docker_images/java/"
+            echo "versions=" >> $GITHUB_OUTPUT
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in versions: ${versions}"
+            # Validate versions and convert to space-separated string
+            valid_versions=""
+            for version in ${versions}; do
+              if [[ -f "docker_images/java/${version}/Dockerfile" ]]; then
+                valid_versions="${valid_versions} ${version}"
+              else
+                echo "::warning::Skipping ${version} - no Dockerfile found"
+              fi
+            done
+            
+            if [[ -n "${valid_versions}" ]]; then
+              versions_trimmed=$(echo "${valid_versions}" | sed 's/^ *//' | sed 's/ *$//')
+              echo "versions=${versions_trimmed}" >> $GITHUB_OUTPUT
+              echo "has-changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "::warning::No valid Java versions found"
+              echo "versions=" >> $GITHUB_OUTPUT
+              echo "has-changes=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+          echo "::endgroup::"
+
+  build-push:
+    name: Build & Push
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push all versions
+        run: |
+          echo "🚀 Building Java versions: ${{ needs.detect-changes.outputs.versions }}"
+
+          for version in ${{ needs.detect-changes.outputs.versions }}; do
+            version_number=$(echo "${version}" | grep -o '[0-9]\+')
+            echo "::group::Building Java ${version_number}"
+            
+            echo "Building Java ${version_number} from ${version}..."
+            
+            # Check if Dockerfile uses multi-arch compatible base images
+            base_image=$(grep "^FROM" "docker_images/java/${version}/Dockerfile" | head -1 | awk '{print $2}')
+            echo "Base image: ${base_image}"
+            
+            # Determine platforms based on base image
+            platforms="linux/amd64"
+            if [[ "${base_image}" == *"openjdk:"* ]] || [[ "${base_image}" == *"amazoncorretto:"* ]] || [[ "${base_image}" == *"eclipse-temurin:"* ]] || [[ "${base_image}" == *"azul/zulu-openjdk:"* ]]; then
+                echo "Multi-arch build enabled for ${base_image}"
+                platforms="linux/amd64,linux/arm64"
+            else
+                echo "Single-arch build (AMD64 only) for ${base_image}"
+                platforms="linux/amd64"
+            fi
+            
+            # Build with buildx
+            docker buildx build \
+              --platform "${platforms}" \
+              --build-arg JAVA_VERSION="${version_number}" \
+              --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${version_number}" \
+              --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:java${version_number}" \
+              --cache-from type=gha,scope=java-${version_number} \
+              --cache-to type=gha,mode=max,scope=java-${version_number} \
+              --push \
+              "docker_images/java/${version}"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Successfully pushed Java ${version_number}"
+              echo "::notice title=Image Published::Java ${version_number} image successfully built and pushed"
+              
+              # Add to summary
+              echo "### ✅ Java ${version_number} Published" >> $GITHUB_STEP_SUMMARY
+              echo "**Platform(s):** ${platforms}" >> $GITHUB_STEP_SUMMARY
+              echo "**Pull:** \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${version_number}\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Failed to build Java ${version_number}"
+              echo "::error title=Build Failed::Java ${version_number} build failed"
+              
+              echo "### ❌ Java ${version_number} Failed" >> $GITHUB_STEP_SUMMARY
+              echo "**Error:** Build failed for ${base_image}" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "::endgroup::"
+          done
+
+  summary:
+    name: Summary
+    needs: [detect-changes, build-push]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# Java Docker Images Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.detect-changes.outputs.has-changes }}" == "true" ]]; then
+            if [[ "${{ needs.build-push.result }}" == "success" ]]; then
+              echo "✅ **All Java images built successfully**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Versions processed:** ${{ needs.detect-changes.outputs.versions }}" >> $GITHUB_STEP_SUMMARY
+            elif [[ "${{ needs.build-push.result }}" == "failure" ]]; then
+              echo "❌ **Some builds failed**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Check the build logs for details." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⏭️ **Builds were skipped**" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "ℹ️ **No changes detected**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No Java Docker images needed to be built." >> $GITHUB_STEP_SUMMARY
+          fi
