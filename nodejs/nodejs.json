@@ -1,12 +1,12 @@
 {
-  "Image": "quay.io/skyport-team/nodejs:22",
+  "Image": "ghcr.io/skyport-team/images/nodejs:22",
   "AltImages": [
-    "quay.io/skyport-team/nodejs:23",
-    "quay.io/skyport-team/nodejs:22",
-    "quay.io/skyport-team/nodejs:21",
-    "quay.io/skyport-team/nodejs:20",
-    "quay.io/skyport-team/nodejs:18",
-    "quay.io/skyport-team/nodejs:16"
+    "ghcr.io/skyport-team/images/nodejs:23",
+    "ghcr.io/skyport-team/images/nodejs:22",
+    "ghcr.io/skyport-team/images/nodejs:21",
+    "ghcr.io/skyport-team/images/nodejs:20",
+    "ghcr.io/skyport-team/images/nodejs:18",
+    "ghcr.io/skyport-team/images/nodejs:16"
   ],
   "Cmd": "",
   "Env": ["START=npm install && npm start"],
