@@ -1,4 +1,4 @@
-FROM node:16-bookworm-slim
+FROM node:16-bookworm-slim 
 
 RUN apt-get update && \
     apt-get upgrade -y && \
